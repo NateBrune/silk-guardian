@@ -1,0 +1,1 @@
+cmd_/home/anna/Code/Projects/silk-guardian/usbkill.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/anna/Code/Projects/silk-guardian/usbkill.ko /home/anna/Code/Projects/silk-guardian/usbkill.o /home/anna/Code/Projects/silk-guardian/usbkill.mod.o
