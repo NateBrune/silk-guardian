@@ -6,6 +6,7 @@
 #include <linux/list.h>
 #include <linux/kthread.h>
 #include <linux/sched.h>
+#include <linux/reboot.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nate Brune");
@@ -13,11 +14,14 @@ MODULE_DESCRIPTION("A module that protects you from having a very bad no good te
 
 uint initialDevices[64];
 uint currentDevices[64];
-
+uint counter = 0;
+uint bcounter = 0;
+struct usb_device *dev, *childdev = NULL;
+struct usb_bus *bus = NULL;
+int chix = 0;
 
 static struct task_struct *thread1;
-
-int guardian(){
+int guardian(void){
 	while(true)
 	{
 		list_for_each_entry(bus, &usb_bus_list, bus_list)
@@ -27,7 +31,7 @@ int guardian(){
 		   {
 		        if(childdev)
 		        {
-		        	currentDevices[counter]=childdev->descriptor.idProduct;
+		        	currentDevices[bcounter]=childdev->descriptor.idProduct;
 		        	bcounter=bcounter+1;
 
 		        }
@@ -37,12 +41,18 @@ int guardian(){
 		int i = 0;
 		for(; i<=counter; i++)
 		{
-			if(initialDevices[i]==currentDevices[i])
+			if(initialDevices[i]!=currentDevices[i])
 			{
 				printk("Change Detected!\n");
+				printk("Syncing & Powering off.\n Good luck in court!");
+				static const char * const shutdown_argv[] = { "/sbin/shutdown", "-h", "-P", "now", NULL };
+				call_usermodehelper(shutdown_argv[0], shutdown_argv, NULL, UMH_NO_WAIT);
+				return 0;
+				break;
 			}
 		}
 		bcounter = 0;
+
 	}
 	return 0;
 }
@@ -52,13 +62,7 @@ static int __init hello_init(void)
 
 	printk("Silk Guardian Module Loaded");
 	printk("\nListing Currently Trusted USB Devices");
-	printk("\n-------------------------------------s\n");
-	int chix = 0;
-	uint counter = 0;
-	uint bcounter = 0;
-	struct usb_device *dev, *childdev = NULL;
-	struct usb_bus *bus = NULL;
-
+	printk("\n-------------------------------------\n");
 	list_for_each_entry(bus, &usb_bus_list, bus_list)
 	{
 	   dev = bus->root_hub;
