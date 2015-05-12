@@ -1,0 +1,2 @@
+#!/bin/sh
+echo "Just run \"make\" and \"make install\""

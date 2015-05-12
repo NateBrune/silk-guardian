@@ -12,18 +12,31 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nate Brune");
 MODULE_DESCRIPTION("A module that protects you from having a very bad no good terrible day.");
 
-uint initialDevices[64];
-uint currentDevices[64];
+uint initialProducts[64];
+uint initialSerials[64];
+uint currentProducts[64];
+uint currentSerials[64];
 uint counter = 0;
 uint bcounter = 0;
 struct usb_device *dev, *childdev = NULL;
 struct usb_bus *bus = NULL;
 int chix = 0;
+bool stop = false;
+
 
 static struct task_struct *thread1;
+
+
+
 int guardian(void){
 	while(true)
 	{
+		int i = 0;
+		if(stop)
+		{
+			break;
+		}
+
 		list_for_each_entry(bus, &usb_bus_list, bus_list)
 		{
 		   dev = bus->root_hub;
@@ -31,21 +44,30 @@ int guardian(void){
 		   {
 		        if(childdev)
 		        {
-		        	currentDevices[bcounter]=childdev->descriptor.idProduct;
+		        	currentProducts[bcounter]=childdev->descriptor.idProduct;
+		        	currentSerials[bcounter]=childdev->descriptor.iSerialNumber;
 		        	bcounter=bcounter+1;
 
 		        }
 		   }
 		
 		}
-		int i = 0;
 		for(; i<=counter; i++)
 		{
-			if(initialDevices[i]!=currentDevices[i])
+			if(initialProducts[i]!=currentProducts[i])
 			{
+				static const char * const shutdown_argv[] = { "/sbin/shutdown", "-h", "-P", "now", NULL };
 				printk("Change Detected!\n");
 				printk("Syncing & Powering off.\n Good luck in court!");
+				call_usermodehelper(shutdown_argv[0], shutdown_argv, NULL, UMH_NO_WAIT);
+				return 0;
+				break;
+			}
+			if(initialSerials[i]!=currentSerials[i])
+			{
 				static const char * const shutdown_argv[] = { "/sbin/shutdown", "-h", "-P", "now", NULL };
+				printk("Change Detected!\n");
+				printk("Syncing & Powering off.\n Good luck in court!");
 				call_usermodehelper(shutdown_argv[0], shutdown_argv, NULL, UMH_NO_WAIT);
 				return 0;
 				break;
@@ -71,7 +93,9 @@ static int __init hello_init(void)
 	   {
 	        if(childdev)
 	        {
-	        	initialDevices[counter]=childdev->descriptor.idProduct;
+	        	initialProducts[counter]=childdev->descriptor.idProduct;
+	        	initialSerials[counter]=childdev->descriptor.iSerialNumber;
+
 	        	printk("Vendor Id:%x, Product Id:%x\n", childdev->descriptor.idVendor, childdev->descriptor.idProduct);
 	        	counter=counter+1;
 	        }
@@ -88,11 +112,13 @@ static int __init hello_init(void)
 
 static void __exit hello_cleanup(void)
 {
-	    printk(KERN_INFO "Stopping guardian.\n");
-	    int ret;
- 		ret = kthread_stop(thread1);
- 		if(!ret)
-  			printk(KERN_INFO "Guardian stopped successfully!");
+		int ret = kthread_stop(thread1);
+		stop=true;
+	    printk("Stopping guardian.\n");
+ 		if(ret)
+  			printk("Guardian stopped successfully!");
+  		return ret;
+  		
 }
 
 module_init(hello_init);

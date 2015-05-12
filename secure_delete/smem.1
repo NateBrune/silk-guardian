@@ -1,0 +1,107 @@
+.\" This definition swiped from the gcc(1) man page
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.TH SMEM 1
+
+.SH NAME
+smem \- secure memory wiper (secure_deletion toolkit)
+
+.SH SYNOPSIS
+.B smem [-f] [-l] [-l] [-v]
+
+.SH DESCRIPTION
+.I smem
+is designed to delete data which may lie still in your memory (RAM)
+in a secure manner which can not be recovered by thiefs, law enforcement
+or other threats.
+Note that with the new SDRAMs, data will not wither away but will be kept
+static - it is easy to extract the necessary information!
+The wipe algorythm is based on the paper "Secure Deletion of Data from
+Magnetic and Solid-State Memory" presented at the 6th Usenix Security
+Symposium by Peter Gutmann, one of the leading civilian cryptographers.
+.PP
+The
+.I secure data deletion
+process of smem goes like this:
+.PP
+.TP
+.B *
+1 pass with 0x00
+.TP
+.B * 
+5 random passes. /dev/urandom is used for a secure RNG if available.
+.TP
+.B * 
+27 passes with special values defined by Peter Gutmann.
+.TP
+.B * 
+5 random passes. /dev/urandom is used for a secure RNG if available.
+.PP
+
+.SH COMMANDLINE OPTIONS
+.PP
+.TP
+.B \-f
+fast (and insecure mode): no /dev/urandom.
+.TP
+.B \-l 
+lessens the security. Only two passes are written: the first with 0x00
+and a final random one.
+.TP
+.B \-l
+-l for a second time lessons the security even more: only one pass with
+0x00 is written.
+.TP
+.B \-v
+verbose mode
+.PP
+
+.SH BEWARE
+.TP
+.B SLOW
+Wiping the memory is very slow. You might use smem with the -ll option. (tip)
+.TP
+.B BETA!
+.I smem
+is still beta.
+
+.PP
+.SH BUGS 
+No bugs. There was never a bug in the secure_deletion package (in contrast
+to my other tools, whew, good luck ;-)
+Send me any that you find.  Patches are nice too :)
+
+.SH AUTHOR
+.Sp
+van Hauser / THC
+.I <vh@thc.org>
+
+.SH DISTRIBUTION
+The newest version of the
+.I secure_deletion package
+can be obtained from 
+.I http://www.thc.org
+.Sp
+.I smem
+and the
+.I secure_deletion package
+is (C) 1997-2003 by van Hauser / THC (vh@thc.org)
+.Sp
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; Version 2.
+.Sp
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+.SH SEE ALSO
+.I srm
+(1),
+.I sfill
+(1),
+.I sswap
+(1)

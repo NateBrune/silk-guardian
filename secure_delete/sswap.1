@@ -1,0 +1,110 @@
+.\" This definition swiped from the gcc(1) man page
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.TH SSWAP 1
+
+.SH NAME
+sswap \- secure swap wiper (secure_deletion toolkit)
+
+.SH SYNOPSIS
+.B sswap [-f] [-l] [-l] [-v] [-z] swapdevice
+
+.SH DESCRIPTION
+.I sswap
+is designed to delete data which may lie still on your swapspace
+in a secure manner which can not be recovered by thiefs, law enforcement
+or other threats.
+The wipe algorythm is based on the paper "Secure Deletion of Data from
+Magnetic and Solid-State Memory" presented at the 6th Usenix Security
+Symposium by Peter Gutmann, one of the leading civilian cryptographers.
+.PP
+The
+.I secure data deletion
+process of sswap goes like this:
+.PP
+.TP
+.B *
+1 pass with 0xff
+.TP
+.B * 
+5 random passes. /dev/urandom is used for a secure RNG if available.
+.TP
+.B * 
+27 passes with special values defined by Peter Gutmann.
+.TP
+.B * 
+5 random passes. /dev/urandom is used for a secure RNG if available.
+.PP
+
+.SH COMMANDLINE OPTIONS
+.PP
+.TP
+.B \-f
+fast (and insecure mode): no /dev/urandom, no synchronize mode.
+.TP
+.B \-l 
+lessens the security. Only two passes are written: one mode with 0xff and
+a final mode with random values.
+.TP
+.B \-l
+-l for a second time lessons the security even more: only one pass with
+random values is written.
+.TP
+.B \-v
+verbose mode
+.TP
+.B \-z
+wipes the last write with zeros instead of random data
+.PP
+
+.SH BEWARE
+.TP
+.B swapoff
+unmount your swapspace before using this tool! Otherwise your system might
+crash!
+.TP
+.B BETA!
+.I sswap
+is still beta. It was only tested on Linux but on this system it performed
+it's work all of the time.
+
+.PP
+.SH BUGS 
+No bugs. There was never a bug in the secure_deletion package (in contrast
+to my other tools, whew, good luck ;-)
+Send me any that you find.  Patches are nice too :)
+
+.SH AUTHOR
+.Sp
+van Hauser / THC
+.I <vh@thc.org>
+
+.SH DISTRIBUTION
+The newest version of the
+.I secure_deletion package
+can be obtained from 
+.I http://www.thc.org
+.Sp
+.I sswap
+and the
+.I secure_deletion package
+is (C) 1997-2003 by van Hauser / THC (vh@thc.org)
+.Sp
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; Version 2.
+.Sp
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+.SH SEE ALSO
+.I srm
+(1),
+.I sfill
+(1),
+.I smem
+(1)

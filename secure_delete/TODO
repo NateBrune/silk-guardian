@@ -1,0 +1,10 @@
+percentage output
+
+sfill - no mktemp()
+
+just take some random data and then use twofish to generate a random stream
+
+sfill inode wipe needs to traverse the full filesystem, and perform it in
+every directory
+
+add wipe mode and verbose mode to sdel-mod via cmd line

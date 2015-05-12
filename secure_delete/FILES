@@ -1,0 +1,21 @@
+FILES           	you are reading me
+CHANGES			what's new/changed ?
+README			link to secure_deletion.doc
+Makefile        	unix makefile for srm.c, sfill.c and sswap.c
+rm-fileutil-3.x.diff	Linux rm.c diff patch (for fileutil 3.x)
+rm-fileutil-4.1.diff	Linux rm.c diff patch (for fileutil 4.1)
+secure_deletion.doc     Documentation (READ!)
+sfill.c         	secure free diskspace overwriting source
+smem.c			secure memory cleaner souce
+srm.c           	secure file deletion source
+sswap.c			secure swap space cleaner source
+sdel-lib.c		secure delete library
+sdel-lib.h		secure delete library header
+sdel.h			secure delete header for the tools
+config.h		system configuration option header file
+the_cleaner.sh		a shellscript which wipes reasonable files,space,swap,mem
+sfill.1			man page for sfill
+smem.1			man page for smem
+srm.1			man page for srm
+sswap.1			man page for sswap
+usenix6-gutmann.doc     Gutmann's article about secure data deletion

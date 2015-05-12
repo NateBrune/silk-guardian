@@ -1,0 +1,420 @@
+
+
+
+                          S E C U R E   D E L E T E
+
+
+                 (c) 1997-2003 by van Hauser / THC  <vh@thc.org>
+
+				 http://www.thc.org
+
+
+
+
+
+          " Does the average person really need this kind of security?
+            I say yes. [...] He may be living in a country that does not
+            respect the rights of privacy of it's citizens. He may be
+            doing something that he feels shouldn't be illegal, but is.
+            Whatever his reasons, his data and communications are
+            personal, private, and nobody's business but his own. "
+
+          Bruce Schneier in the Preface of his book "Applied Cryptography"
+
+
+
+	  " A Puritan is someone who is deathly afraid that someone,
+	    somewhere, is having fun. "
+
+          Unknown
+
+
+
+
+
+                            1. INTRODUCTION
+                            2. HOW THESE PROGRAMS WORK
+                            3. COMMANDLINE OPTIONS
+                            4. LIMITATIONS
+			    5. COMPARISON
+                            6. LAST WORDS
+                         
+
+
+
+
+
+     1. INTRODUCTION
+
+     Years ago, people using the old msdos, simply deleted a file by
+     doing "del filename" and thought the the erase was forever.
+     Then Norton's undelete was released and everyone could get
+     back the files most of the time. After that people who wanted to
+     keep people of their deleted files erased them by overwriting the
+     file with random or 0x00 bytes and felt secure.
+
+     In 1996 Peter Gutmann published a paper called "Secure Deletion of Data
+     from Magnetic and Solid-State Memory" at the 6th Usenix Security
+     Symposium, where he pointed out that the data could even be recovered
+     if you overwrote them triple times and more - using cheap equipment
+     for about 1000-2500$.
+     The three utilities presented here try to cover this new area of secure
+     deletion and prevent file recovery.
+     This release includes the full paper of Peter Gutmann from the
+     6th Usenix Security Proceeding (usenix6-gutmann.doc).
+
+     The four utilities do the following :
+
+     srm does secure deletion of files.
+     sfill does a secure overwriting of the unused diskspace on the harddisk.
+     sswap does a secure overwriting and cleaning of the swap filesystem.
+	(note that sswap was only tested on linux so far.
+         you must unmount your swap first!)
+     smem does a secure overwriting of unused memory (RAM)
+
+     For Linux, there's a diff (rm.diff) patch for rm.c which puts the
+     overwriting feature into it. (You need the fileutil sources)
+
+
+
+
+     2. HOW THESE PROGRAMS WORK
+
+     The deletion process is as follows:
+
+     1. The overwriting procedure (in the secure mode) does a 38 times
+        overwriting. After each pass, the disk cache is flushed.
+     2. truncating the file, so that an attacker don't know which
+        diskblocks belonged to the file.
+     3. renaming of the file, so that an attacker can't draw any conclusion
+        from the filename on the contents of the deleted file.
+     4. finally deleting the file (unlink).
+
+    Note that with v2.0 all secure_delete utilities work in secure mode
+    (38 special passes). To lower the security and make it faster, you
+    may add -l (onf 0xff pass, one random pass) or -ll (one random pass) to
+    the parameters. 
+     
+     The secure overwrite mode works that way:
+
+      1x overwrite with 0xff
+      5x random passes
+     27x overwriting with special values to make the recovery from MFM and
+         RLL encoded harddisks hard/impossible - see Gutmann's paper on that
+         which is also included.
+      5x random passes     
+
+
+
+     Some statistics :
+
+     in 1 second you can approx. overwrite 1 to 2 MB of data, depending
+     on your harddrive performance.
+
+     In totally insecure mode, a 100 MB file/free-disk-space takes
+     approx. 15 seconds, and in the totally secure mode approx. 60 minutes.
+
+
+
+
+
+     3. COMMANDLINE OPTIONS
+
+     Here are the commandline options:
+
+     srm    [-d] [-f] [-l] [-l] [-v] [-z] file [file] [another file] [etc.]
+     sfill  [-i] [-I] [-f] [-l] [-l] [-v] [-z] target-directory
+     sswap  [-f] [-l] [-l] [-v] [-z] /dev/of_swap_filesystem
+     smem   [-f] [-l] [-l] [-v]
+
+     The -s options are depricated now, and will be ignored.
+
+      -d   don't delete the dot special files "." and ".." on the
+           commandline (only srm)
+      -i   wipe only free inode space, not free disk space on the filesystem
+           (only sfill)
+      -I   wipe only free disk space, not free inode space on the filesystem
+           (only sfill)
+      -f   fast writes without O_SYNC and sync() between writes. Much faster
+           but less secure.
+      -l   lessens the security. Only one random plus one pass with 0xff are
+	   written.
+      -l   a seconds time as parameter switches into the insecurest mode,
+	   it overwrites the file only once with 0xff.
+      -v   turn verbose mode on.
+      -z   last wipe mode writes zeros instead of random data
+     file  file to delete. Wildcards are of course allowed.
+           For unix: you need write permissions. For msdos: It may be hidden,
+           system, readonly etc. we don't care.
+    target-directory  target is a directory in the filesystem to write to.
+    swap_filesystem   your swap filesystem. Unmount it first!!
+                      only tested on linux
+
+     Options may be applied like "-lfv", "-l -f -v" or a mix.
+
+     Note: If you use a gnu-compactible linux, you can use the patch rm.diff
+     included in the package to put the features from srm into your normal
+     rm. Just enter your fileutils-3.16 directory, type "patch < rm.diff"
+     and then "make". You need at least one -s switch to activate
+     (1 overwrite). Note that -sss is needed for full security.
+
+
+
+
+     4. LIMITATIONS
+
+     This section discusses limitations of the programs presented and general
+     problems and threats of secure data deletion - and how to handle them.
+     As you can see from the sourcecode, these are very small and generic
+     programs. That means that they aren't perfect and doesn't cover any
+     aspect of secure data deletion. Please read this section carefully
+     to learn against which problems it does NOT help.
+     
+
+          - Random Number Generation
+	    Since v2.0, secure_deletion uses the /dev/urandom as a random
+            source if available. This should fix this problem. However,
+            for completeness, read on:
+            The numbers which WERE generated by the programs were far away
+            being "real" random. Standard random number generators are
+            used and they are easy to predict.
+            This is a major risk if you are using them for online crypting
+            purpose, for the purpose of overwriting it is nearly enough.
+            However, I added two extra random overwrites to be sure.
+            A solution for paranoid people : change the random number generator
+            in the programs to something you trust.
+            Here's an extract from an answer Peter Gutmann wrote me as
+            I asked him about that problem :
+
+   > 1st to be compactible with all platforms i didn t use a crypt-random
+   > library, I use a simple  (256*rand()/(RAND_MAX+1.0)) seeded 1st time with
+   > the pid. For every byte to overwrite the file I call that function.
+   > I know that this random stuff is not "secure" for online crypting,
+   > but is it enough for deletion?
+   > I added 2 more random overwrite modes in the source to minimize that risk.
+   > What do you think?
+   A strong RNG isn't that essential, as long as you're not writing a constant 
+   pattern.  I use RC4 in SFS because it's faster than most RNG's provided in 
+   compiler libraries.
+
+[/dev/urandom is used if available. This is a very good RNG]
+
+
+          - Disk Caching
+            Note that this is only important for FILE DELETION (srm) for free
+            diskspace wiping the data which will be overwritten is large
+            enough.
+            Imagine that you overwrite a file for 50 times, you feel secure,
+            but only one - the last overwrite - is really made.
+            This can be the case if you use smart software caches, hardware
+            cache-controllers - or the cachebuffers which are present on
+            all (E)IDE and SCSI harddisks.
+            This programs uses fsync() - it depends on your unix and hardware
+            if this is enough.
+            If you use an hardware cache-controller you must remove it.
+            For the cachebuffers of the harddisks you must overwrite a file
+            which is greater in size than the diskbuffer. You can either
+            add data to the file until it reachs that size or you define
+            the BLOCKSIZE definition to a size big enough
+            Here again is en extract of an answer Peter Gutmann wrote in
+            regard of this threat :
+
+   > 2nd is the chaching problem. For msdos i flush smartdrive after every
+   > write of a pattern, on unix I use sync. That makes it easy to compile
+   > on all platforms, yes, but it won't flush the harddisks internal caches.
+   > how big must be the file to force the internal cache to write to disk?
+   > at the moment I do only full 16 kb writes to a) overwrite the whole block
+   > and also to reach the limit of the internal cache.
+   I don't think there's an easy answer to this.  Most cheap commercial drives 
+   have tiny caches (typically 96KB or 128KB with 16KB (EIDE) or 32KB (SCSI)
+   used by the firmware), but larger SCSI drives designed for servers and/or 
+   controllers on servers can have considerable caches.  I'd say 16KB or 32KB 
+   would be reasonably safe.
+
+[secure_deletion uses 32kb, and since 2.2 enlarges this if the blocksize
+ of the filesystem is larger]
+            
+
+          - Temporary files and disks
+            Windows 3.x, Win95 and WinNT support virtuell memory which means
+            that if more memory is needed, some space of the harddisk will
+            be used. Unix does the same, using the swap space partition (and
+            additionally swap files can be created). Some other programs do
+            the same, especially databases.
+            Other programs you use, f.e. a word processor etc. writes recovery
+            and/or backup files. Those must be secure deleted too - which is
+            a major problem if the programs delete them after the program exit.
+            Solution, regardless of the operating system of your choice :
+               - All disk partitions must be set write protected in some way
+                 before you want to do something which shouldn't be saved
+                 anywhere. MsDos tools are available, on unix they can be
+                 mounted readonly, Win95/WinNT : don't know if thats possible.
+               - Install a ramdisk from which you start all applications
+                 (for Windows set the working directory on the ramdisk)
+                 and ensure that all temporary stuff, etc. points to that disk.
+                 If you can't afford ram, repartition your disks so that you
+                 get an 20+ MB diskspace either ensure a complete wiping of
+                 that partition after every session (use "sfill -v")
+                 or use a crypted filesystem (see next step).
+                 For unix you should set a ramdrive for the swap partition,
+                 and use an additional ramdisk or crypted partition for
+                 /tmp and ensure that /usr/tmp and /var/tmp point to it.
+		 If you can't afford buying ram so you don't need swap, you
+		 can use the secure swap cleaner, included in this package.
+		 With v1.8 of secure_deletion, you can also use sswap to
+		 clean your swap space after you unmounted it.
+               - If you really need the data you produced or analysed,
+                 then create a crypted filesystem on a disk partition.
+                 For unix you can use CFS (newest version v1.4.x), for MsDos
+                 and Windows 3.x there are SFS v1.7 and SecureDrive v1.4a
+                 available. I don't know any for Win95 and WinNT - but these
+                 have special problems anyway so see the next topic :
+
+
+          - Windows 95 and WinNT
+            As you can see, the programs were NOT programmed for any Windows
+            environment and this has got the following reasons :
+               - I don't know enough about these systems to make the programs
+                 secure, also I know that they've got an internal function to
+                 flush their caches without any problems.
+               - Special problems like in the NTFS, the WinNT Filesystem, which
+                 holds too much information on the files, so that real secure
+                 data deletion is tricky.
+               - Windows machines swap very often - and where and how to
+                 control that - I don't know, in my opinion it would be too
+                 difficult to make it a secure system (against data recovery).
+                 So why writing a secure deletion programs when fragments of
+                 the files are everywhere on the harddisk?
+
+          - Networks
+            Before we'll discuss further matters of that topic let me put it
+            short and straight : YOU CAN'T ENSURE SECURE DATA DELETION WHEN
+            WORKING OVER A NETWORK YOU DO NOT *COMPLETLY* CONTROL !
+            Because :
+               - The network servers and maybe even your local computer
+                 caches the data to be written. See "Disk Caching" above
+                 why this is a problem - and this one can't be solved.
+               - How long are your files present on the server? Long enough
+                 that they are written on a backup?
+               - A hacker or law enforcement/spies could have trojanized the
+                 server in a way that your files won't be overwritten and
+                 removed but those files are written to a special place waiting
+                 to be retrieved by them. Nearly all known network operating
+                 systems and also some firewalls can be penetrated from remote,
+                 no kidding. So don't think that you are not vulnerable.
+                 Another possiblity is that the memory of the server is
+                 surveilled and all reading/writing processes own by you or
+                 anyone copied.
+               - Even if everything is ensured there might be still problems
+                 on high-end systems, which use f.e. Raid5 or similar redunant
+                 harddisk systems which prevent data loss by keeping copies
+                 and checksums, and you must find a way to trash those
+                 information too.
+            The solution is easy: don't put any private and important stuff
+            you don't want anybody to see on the network - crypt it before
+            transfering it on a server.
+
+
+          - Paranoia
+            Finally two points which are for very paranoid guys.
+            Imagine a temporary file was written by a program you used for
+            your important files and they were deleted. You run "sfill"
+            f.e. to clean all unused diskspace to trash all information.
+            But another file, f.e. a config file, was written when exiting the
+            program and parts of the temporary file are now owned and
+            overwritten by the config file. sfill or any similar program won't
+            trash that filearea because it's used by a file. And the data on
+            this area can be recovered with cheap hardware.
+            Solution : see above, "temporary files and disks"
+            If you really care about your files that they can't be recovered
+            you should also ensure that the "others" can't get the data by
+            other means, f.e. by either hacking your computer or analyzing
+            the electromagnetic/sound/wave emissions from the monitor, printer,
+            fax and cables.
+            Solution : pull out your network/modem cable when working and
+            try to shield your computer (search the inet for more info on that)
+
+	  - But there is help
+	    Watch out. Soon there will be a new release from THC which
+	    shows how to make a Linux machine anonymous. When followed,
+	    nothing will be recoverable for someone having your harddisks.
+	    -> This was released looong ago now :-) Go the the THC website,
+            enter the articles/papers section and look for "anonymizing unix
+	    systems".
+
+
+     5. COMPARISON
+
+Program		   	secure_delete (srm)	wipe		   wipe
+Version				2.1		0.2		   0.56-2a
+Programmer	   	van Hauser / THC	Berke Durak	   Tom Vier
+Email		   	   vh@thc.org	bedrettin@chez.com thomassr@erols.com
+
+Standard Passes			38		35			35
+More passes via cmd		no		no			yes
+Fewer passes via cmd		yes		yes			yes
+Good RNG			yes		yes			yes
+Blocksize (larger is better)	32k		1k			0
+Truncates file			yes		no			yes
+Rename file/directory		yes		no			no
+
+recursive mode			yes		yes			yes
+secure recursive (link races)   yes		no			no
+verbose mode			yes		yes			yes
+
+additional wipe tools		yes		no			no
+
+Time: 1 File, 1MB		25s		40s			26s
+Time: 10 Files, 10kb		12s		6s			4s
+(Parameters for tests)		<none>		-f			-fTe
+						  		(needed for the
+								 fastest mode)
+						  [otherwise it needs x12 time]
+
+Why is secure_delete that fast with big files but slower with many small
+ones? It's fast, because it uses a big buffer for writing. It's slow because
+the additional security features (rename, truncating, more passes, better
+RNG [against wipe-0.2] and by far the biggest blocksize).
+It's also the only one which comes with a free diskspace wiper and a special
+cleaner for swap space and memory.
+I think the choice is easy ,-)  I hope the other programmers will make their
+programs better too, the more good & secure & fast programs, the better.
+Competition helps us all.
+
+
+     6. LAST WORDS
+
+     I hope these little utilities help those who really need them.
+     For any bugs, ideas or ongoing discussion feel free to email me at
+     vh@thc.org using the public pgp key below.
+
+	http://www.thc.org
+
+     Have fun ...
+                    van Hauser / [THC] - The Hacker's Choice
+
+
+Type Bits/KeyID    Date       User ID
+pub  2048/CDD6A571 1998/04/27 van Hauser / THC <vh@reptile.rug.ac.be>
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: 2.6.3i
+
+mQENAzVE0A4AAAEIAOzKPhKBDFDyeTvMKQ1xx6781tEdIYgrkrsUEL6VoJ8H8CIU
+SeXDuCVu3JlMKITD6nPMFJ/DT0iKHgnHUZGdCQEk/b1YHUYOcig1DPGsg3WeTX7L
+XL1M4DwqDvPz5QUQ+U+VHuNOUzgxfcjhHsjJj2qorVZ/T5x4k3U960CMJ11eOVNC
+meD/+c6a2FfLZJG0sJ/kIZ9HUkY/dvXDInOJaalQc1mYjkvfcPsSzas4ddiXiDyc
+QcKX+HAXIdmT7bjq5+JS6yspnBvIZC55tB7ci2axTjwpkdzJBZIkCoBlWsDXNwyq
+s70Lo3H9dcaNt4ubz5OMVIvJHFMCEtIGS83WpXEABRG0J3ZhbiBIYXVzZXIgLyBU
+SEMgPHZoQHJlcHRpbGUucnVnLmFjLmJlPokAlQMFEDVE0D7Kb9wCOxiMfQEBvpAD
+/3UCDgJs1CNg/zpLhRuUBlYsZ1kimb9cbB/ufL1I4lYM5WMyw+YfGN0p02oY4pVn
+CQN6ca5OsqeXHWfn7LxBT3lXEPCckd+vb9LPPCzuDPS/zYnOkUXgUQdPo69B04dl
+C9C1YXcZjplYso2q3NYnuc0lu7WVD0qT52snNUDkd19ciQEVAwUQNUTQDhLSBkvN
+1qVxAQGRTwgA05OmurXHVByFcvDaBRMhX6pKbTiVKh8HdJa8IdvuqHOcYFZ2L+xZ
+PAQy2WCqeakvss9Xn9I28/PQZ+6TmqWUmG0qgxe5MwkaXWxszKwRsQ8hH+bcppsZ
+2/Q3BxSfPege4PPwFWsajnymsnmhdVvvrt69grzJDm+iMK0WR33+RvtgjUj+i22X
+lpt5hLHufDatQzukMu4R84M1tbGnUCNF0wICrU4U503yCA4DT/1eMoDXI0BQXmM/
+Ygk9bO2Icy+lw1WPodrWmg4TJhdIgxuYlNLIu6TyqDYxjA/c525cBbdqwoE+YvUI
+o7CN/bJN0bKg1Y/BMTHEK3mpRLLWxVMRYw==
+=MdzX
+-----END PGP PUBLIC KEY BLOCK-----

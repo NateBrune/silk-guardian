@@ -1,0 +1,235 @@
+--- src/rm.c.orig	Sat Nov 23 23:11:12 1996
++++ src/rm.c	Sun Jan 24 13:37:20 1999
+@@ -1,3 +1,10 @@
++/*  patch for rm from fileutils-3.16 to support secure data deletion
++ *  to be activated by -s. -sss gives full erasure security (38 overwrites)
++ *  This patch is from the secure_delete-2.0.tar.gz package available
++ *  at http://www.thehackerschoice.com - get it, and read the documentation!
++ *  (c)1999 by van Hauser / [THC] - The Hacker's Choice, vh@reptile.rug.ac.be
++ */
++
+ /* `rm' file deletion utility for GNU.
+    Copyright (C) 88, 90, 91, 94, 95, 1996 Free Software Foundation, Inc.
+ 
+@@ -21,6 +28,11 @@
+ #include <stdio.h>
+ #include <getopt.h>
+ #include <sys/types.h>
++/* SRM BEGIN */
++#include <sys/stat.h>
++#include <unistd.h>
++#include <stdlib.h>
++/* SRM END */
+ 
+ #include "system.h"
+ #include "error.h"
+@@ -50,6 +62,14 @@
+ int yesno ();
+ void strip_trailing_slashes ();
+ 
++/* SRM BEGIN */
++#define BLOCKSIZE	32769
++#define DIR_SEPERATOR	'/'
++#define FLUSH		sync()
++#define RANDOM_DEVICE	"/dev/urandom"
++/* SRM END */
++
++static int secure_delete ();
+ static int clear_directory __P ((struct stat *statp));
+ static int duplicate_entry __P ((struct pathstack *stack, ino_t inum));
+ static int remove_dir __P ((struct stat *statp));
+@@ -68,6 +88,12 @@
+ /* Path of file now being processed; extended as necessary.  */
+ static char *pathname;
+ 
++/* SRM BEGIN */
++static int secure;	/* secure overwrite mode */
++static char fillbuf[BLOCKSIZE];
++static FILE *devrandom;
++/* SRM END */
++
+ /* Number of bytes currently allocated for `pathname';
+    made larger when necessary, but never smaller.  */
+ static int pnsize;
+@@ -104,6 +130,9 @@
+   {"force", no_argument, NULL, 'f'},
+   {"interactive", no_argument, NULL, 'i'},
+   {"recursive", no_argument, &recursive, 1},
++/* SRM BEGIN */
++  {"secure_delete", no_argument, NULL, 's'},
++/* SRM END */
+   {"verbose", no_argument, &verbose, 1},
+   {"help", no_argument, &show_help, 1},
+   {"version", no_argument, &show_version, 1},
+@@ -125,8 +154,8 @@
+     = unlink_dirs = 0;
+   pnsize = 256;
+   pathname = xmalloc (pnsize);
+-
+-  while ((c = getopt_long (argc, argv, "dfirvR", long_opts, (int *) 0)) != EOF)
++  
++  while ((c = getopt_long (argc, argv, "dfirsvR", long_opts, (int *) 0)) != EOF)
+     {
+       switch (c)
+ 	{
+@@ -147,6 +176,11 @@
+ 	case 'R':
+ 	  recursive = 1;
+ 	  break;
++/* SRM BEGIN */
++        case 's':
++          secure++;
++          break;
++/* SRM END */
+ 	case 'v':
+ 	  verbose = 1;
+ 	  break;
+@@ -198,6 +232,116 @@
+   exit (err > 0);
+ }
+ 
++/* SRM BEGIN */
++
++void fill_buf(char pattern[3]) {
++    int loop;
++    int where;
++    for (loop = 0; loop < (BLOCKSIZE / 3); loop++) {
++        where = loop * 3;
++        fillbuf[where] = pattern[0];
++        fillbuf[where+1] = pattern[1];
++        fillbuf[where+2] = pattern[2];
++    }
++}
++void random_buf() {
++    int loop;
++    if (devrandom != NULL)
++        for (loop = 0; loop < BLOCKSIZE; loop++)
++            fillbuf[loop] = (unsigned char) (256.0*rand()/(RAND_MAX+1.0));
++    else
++        fread(&fillbuf, BLOCKSIZE, 1, devrandom);
++}
++
++/* overwriting the file several times */
++
++ static int
++ secure_delete (delfile)
++       char *delfile;
++ {
++    unsigned char write_modes[27][3] = {
++	{"\x55\x55\x55"}, {"\xaa\xaa\xaa"}, {"\x92\x49\x24"}, {"\x49\x24\x92"},
++	{"\x24\x92\x49"}, {"\x00\x00\x00"}, {"\x11\x11\x11"}, {"\x22\x22\x22"},
++	{"\x33\x33\x33"}, {"\x44\x44\x44"}, {"\x55\x55\x55"}, {"\x66\x66\x66"},
++	{"\x77\x77\x77"}, {"\x88\x88\x88"}, {"\x99\x99\x99"}, {"\xaa\xaa\xaa"},
++	{"\xbb\xbb\xbb"}, {"\xcc\xcc\xcc"}, {"\xdd\xdd\xdd"}, {"\xee\xee\xee"},
++	{"\xff\xff\xff"}, {"\x92\x49\x24"}, {"\x49\x24\x92"}, {"\x24\x92\x49"},
++	{"\x6d\xb6\xdb"}, {"\xb6\xdb\x6d"}, {"\xdb\x6d\xb6"}
++    };
++     unsigned char std_array[3] = "\xff\xff\xff";
++     FILE *f;
++     int file;
++     unsigned long writes;
++     unsigned long counter;
++     unsigned long filesize;
++     struct stat filestat;
++     int turn;
++     int result;
++     unsigned char ch;
++     char newname[512];
++
++/* open the file, get the filesize, calculate the numbers of needed writings */
++    if (lstat(delfile, &filestat))
++        return 1;
++    if (! S_ISREG(filestat.st_mode))
++        return 1;
++    if ((f = fopen(delfile, "r+b")) == NULL)
++        return 1;
++    filesize = filestat.st_size;
++    writes = (1 + (filesize / BLOCKSIZE));
++    file=fileno(f);
++    (void) setvbuf(stdout, NULL, _IONBF, 0);
++    devrandom = fopen(RANDOM_DEVICE, "r");
++
++    if (verbose)
++        printf(" ");
++
++
++    if (secure > 1) {
++        fill_buf(std_array);
++        for (counter=1; counter<=writes; counter++)
++            fwrite(&fillbuf, 1, BLOCKSIZE, f);
++        if (verbose)
++            printf("*");
++        fflush(f);
++        fsync(file);
++    }
++
++/* do the overwriting stuff */
++        for (turn=0; turn<=36; turn++) {
++            rewind(f);
++            if ((secure < 3) && (turn > 0)) break;
++            if ((turn>=5) && (turn<=31)) {
++	       fill_buf(write_modes[turn-5]);
++               for (counter=1; counter<=writes; counter++)
++                   fwrite(&fillbuf, 1, BLOCKSIZE, f);
++            } else {
++               for (counter=1; counter<=writes; counter++) {
++                  random_buf();
++                  fwrite(&fillbuf, 1, BLOCKSIZE, f);
++               }
++            }
++            fflush(f);
++            if (fsync(file) < 0)
++		FLUSH;
++            if (verbose)
++                printf("*");
++        }
++    (void) fclose(f);
++    (void) fclose(devrandom);
++/* Hard Flush -> Force cached data to be written to disk */
++    FLUSH;
++/* open + truncating the file, so an attacker doesn't know the diskblocks */
++   if ((file = open(delfile, O_WRONLY | O_TRUNC)) >= 0)
++       close(file);
++   if (verbose)
++       printf(" wiped\n");
++   return 0;
++}
++
++/* SRM END */
++
+ /* Remove file or directory `pathname' after checking appropriate things.
+    Return 0 if `pathname' is removed, 1 if not.  */
+ 
+@@ -264,8 +408,16 @@
+ 	return 1;
+     }
+ 
+-  if (verbose)
+-    printf ("%s\n", pathname);
++  if (verbose) {
++    printf ("%s", pathname);
++    if (secure == 0)
++        printf ("\n");
++  }
++      
++/* SRM BEGIN */
++  if (secure)
++    secure_delete(pathname);
++/* SRM END */
+ 
+   if (unlink (pathname) && (errno != ENOENT || !ignore_missing_files))
+     {
+@@ -536,11 +688,13 @@
+   -f, --force           ignore nonexistent files, never prompt\n\
+   -i, --interactive     prompt before any removal\n\
+   -r, -R, --recursive   remove the contents of directories recursively\n\
++  -s, --secure_delete   secure overwrite (-sss for full security)\n\
+   -v, --verbose         explain what is being done\n\
+       --help            display this help and exit\n\
+       --version         output version information and exit\n\
+ "));
+       puts (_("\nReport bugs to fileutils-bugs@gnu.ai.mit.edu"));
++      puts (_("\nWith secure_delete patch by van Hauser <vh@reptile.rug.ac.be>"));
+     }
+   exit (status);
+ }

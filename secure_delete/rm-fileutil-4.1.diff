@@ -1,0 +1,249 @@
+--- remove.c.orig	2003-05-05 15:15:48.000000000 +0200
++++ remove.c	2003-05-05 15:26:08.000000000 +0200
+@@ -26,6 +26,12 @@
+ #include <sys/types.h>
+ #include <assert.h>
+ 
++/* SRM BEGIN */
++#include <sys/stat.h>
++#include <unistd.h>
++#include <stdlib.h>
++/* SRM END   */
++
+ #if HAVE_STDBOOL_H
+ # include <stdbool.h>
+ #else
+@@ -81,6 +87,18 @@
+ int euidaccess ();
+ int yesno ();
+ 
++/* SRM BEGIN */
++#define BLOCKSIZE      32769
++#define DIR_SEPERATOR  '/'
++#define FLUSH          sync()
++#define RANDOM_DEVICE  "/dev/urandom"
++static int secure = 0;
++static char fillbuf[BLOCKSIZE];
++static FILE *devrandom;
++/* Functions */
++static int secure_delete();
++/* SRM END   */
++
+ extern char *program_name;
+ 
+ /* state initialized by remove_init, freed by remove_fini  */
+@@ -605,6 +623,103 @@
+   return status;
+ }
+ 
++/* SRM BEGIN */
++void fill_buf(char pattern[3]) {
++    int loop;
++    int where;
++    for (loop = 0; loop < (BLOCKSIZE / 3); loop++) {
++        where = loop * 3;
++        fillbuf[where] = pattern[0];
++        fillbuf[where+1] = pattern[1];
++        fillbuf[where+2] = pattern[2];
++    }
++}
++
++void random_buf() {
++    int loop;
++    if (devrandom != NULL)
++        for (loop = 0; loop < BLOCKSIZE; loop++)
++            fillbuf[loop] = (unsigned char) (256.0*rand()/(RAND_MAX+1.0));
++    else
++        fread(&fillbuf, BLOCKSIZE, 1, devrandom);
++}
++
++/* overwriting the file several times */
++ static int
++ secure_delete (delfile)
++       char *delfile;
++ {
++    unsigned char write_modes[27][3] = {
++	{"\x55\x55\x55"}, {"\xaa\xaa\xaa"}, {"\x92\x49\x24"}, {"\x49\x24\x92"},
++	{"\x24\x92\x49"}, {"\x00\x00\x00"}, {"\x11\x11\x11"}, {"\x22\x22\x22"},
++	{"\x33\x33\x33"}, {"\x44\x44\x44"}, {"\x55\x55\x55"}, {"\x66\x66\x66"},
++	{"\x77\x77\x77"}, {"\x88\x88\x88"}, {"\x99\x99\x99"}, {"\xaa\xaa\xaa"},
++	{"\xbb\xbb\xbb"}, {"\xcc\xcc\xcc"}, {"\xdd\xdd\xdd"}, {"\xee\xee\xee"},
++	{"\xff\xff\xff"}, {"\x92\x49\x24"}, {"\x49\x24\x92"}, {"\x24\x92\x49"},
++	{"\x6d\xb6\xdb"}, {"\xb6\xdb\x6d"}, {"\xdb\x6d\xb6"}
++    };
++     unsigned char std_array[3] = "\xff\xff\xff";
++     FILE *f;
++     int file;
++     unsigned long writes;
++     unsigned long counter;
++     unsigned long filesize;
++     struct stat filestat;
++     int turn;
++     int result;
++     unsigned char ch;
++     char newname[512];
++
++/* open the file, get the filesize, calculate the numbers of needed writings */
++    if (lstat(delfile, &filestat))
++        return 1;
++    if (! S_ISREG(filestat.st_mode))
++        return 1;
++    if ((f = fopen(delfile, "r+b")) == NULL)
++        return 1;
++    filesize = filestat.st_size;
++    writes = (1 + (filesize / BLOCKSIZE));
++    file=fileno(f);
++    (void) setvbuf(stdout, NULL, _IONBF, 0);
++    devrandom = fopen(RANDOM_DEVICE, "r");
++
++    if (secure > 1) {
++        fill_buf(std_array);
++        for (counter=1; counter<=writes; counter++)
++            fwrite(&fillbuf, 1, BLOCKSIZE, f);
++        fflush(f);
++        fsync(file);
++    }
++
++/* do the overwriting stuff */
++        for (turn=0; turn<=36; turn++) {
++            rewind(f);
++            if ((secure < 3) && (turn > 0)) break;
++            if ((turn>=5) && (turn<=31)) {
++	       fill_buf(write_modes[turn-5]);
++               for (counter=1; counter<=writes; counter++)
++                   fwrite(&fillbuf, 1, BLOCKSIZE, f);
++            } else {
++               for (counter=1; counter<=writes; counter++) {
++                  random_buf();
++                  fwrite(&fillbuf, 1, BLOCKSIZE, f);
++               }
++            }
++            fflush(f);
++            if (fsync(file) < 0)
++		FLUSH;
++        }
++    (void) fclose(f);
++    (void) fclose(devrandom);
++/* Hard Flush -> Force cached data to be written to disk */
++    FLUSH;
++/* open + truncating the file, so an attacker doesn't know the diskblocks */
++   if ((file = open(delfile, O_WRONLY | O_TRUNC)) >= 0)
++       close(file);
++   return 0;
++}
++/* SRM END */
++
+ /* Query the user if appropriate, and if ok try to remove the
+    file or directory specified by FS.  Return RM_OK if it is removed,
+    and RM_ERROR or RM_USER_DECLINED if not.  */
+@@ -646,9 +761,16 @@
+ 	return RM_USER_DECLINED;
+     }
+ 
+-  if (x->verbose)
+-    printf (_("removing %s\n"), quote (full_filename (pathname)));
++  if (x->verbose) {
++    if (secure)
++      printf (_("wiping %s\n"), quote (full_filename (pathname)));
++    else
++      printf (_("removing %s\n"), quote (full_filename (pathname)));
++  }
+ 
++  if (secure)
++    secure_delete(pathname);
++  
+   if (unlink (pathname) && (errno != ENOENT || !x->ignore_missing_files))
+     {
+       error (0, errno, _("cannot unlink %s"), quote (full_filename (pathname)));
+@@ -821,6 +943,8 @@
+ {
+   mode_t filetype_mode;
+ 
++  secure = x->secure;
++
+   if (user_specified_name)
+     {
+       /* CAUTION: this use of base_name works only because any
+--- rm.c.orig	2003-05-05 14:58:35.000000000 +0200
++++ rm.c	2003-05-05 15:16:31.000000000 +0200
+@@ -58,7 +58,7 @@
+ #define PROGRAM_NAME "rm"
+ 
+ #define AUTHORS \
+-  "Paul Rubin, David MacKenzie, Richard Stallman, and Jim Meyering"
++  "Paul Rubin, David MacKenzie, Richard Stallman, Jim Meyering, and van Hauser"
+ 
+ void strip_trailing_slashes ();
+ 
+@@ -71,6 +71,9 @@
+   {"force", no_argument, NULL, 'f'},
+   {"interactive", no_argument, NULL, 'i'},
+   {"recursive", no_argument, NULL, 'r'},
++/* SRM BEGIN */
++  {"secure", no_argument, NULL, 's'},
++/* SRM END   */
+   {"verbose", no_argument, NULL, 'v'},
+   {GETOPT_HELP_OPTION_DECL},
+   {GETOPT_VERSION_OPTION_DECL},
+@@ -93,6 +96,7 @@
+   -f, --force           ignore nonexistent files, never prompt\n\
+   -i, --interactive     prompt before any removal\n\
+   -r, -R, --recursive   remove the contents of directories recursively\n\
++  -s, --secure          secure overwrite (-sss for full security)\n\
+   -v, --verbose         explain what is being done\n\
+       --help            display this help and exit\n\
+       --version         output version information and exit\n\
+@@ -105,10 +109,11 @@
+ \n\
+ Note that if you use rm to remove a file, it is usually possible to recover\n\
+ the contents of that file.  If you want more assurance that the contents are\n\
+-truly unrecoverable, consider using shred.\n\
++truly unrecoverable, use the -s option.\n\
+ "),
+ 	      program_name, program_name);
+       puts (_("\nReport bugs to <bug-fileutils@gnu.org>."));
++      puts (_("\nWith secure_delete patch by van Hauser <vh@thc.org>"));
+     }
+   exit (status);
+ }
+@@ -122,6 +127,7 @@
+   x->recursive = 0;
+   x->stdin_tty = isatty (STDIN_FILENO);
+   x->verbose = 0;
++  x->secure = 0;
+ }
+ 
+ int
+@@ -140,7 +146,7 @@
+ 
+   rm_option_init (&x);
+ 
+-  while ((c = getopt_long (argc, argv, "dfirvR", long_opts, NULL)) != -1)
++  while ((c = getopt_long (argc, argv, "dfirsvR", long_opts, NULL)) != -1)
+     {
+       switch (c)
+ 	{
+@@ -161,6 +167,11 @@
+ 	case 'R':
+ 	  x.recursive = 1;
+ 	  break;
++/* SRM BEGIN */
++	case 's':
++	  x.secure++;
++	  break;
++/* SRM END   */
+ 	case 'v':
+ 	  x.verbose = 1;
+ 	  break;
+--- remove.h.orig	2003-05-05 15:13:47.000000000 +0200
++++ remove.h	2003-05-05 15:14:13.000000000 +0200
+@@ -18,6 +18,9 @@
+      Only works for the super-user.  */
+   int unlink_dirs;
+ 
++  /* If nonzero, secure overwrites file contents */
++  int secure;
++
+   /* If nonzero, display the name of each file removed.  */
+   int verbose;
+ };

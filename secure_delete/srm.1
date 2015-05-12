@@ -1,0 +1,140 @@
+.\" This definition swiped from the gcc(1) man page
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.TH SRM 1
+
+.SH NAME
+srm \- secure remove (secure_deletion toolkit)
+
+.SH SYNOPSIS
+.B srm [-d] [-f] [-l] [-l] [-r] [-v] [-z] files
+
+.SH DESCRIPTION
+.I srm 
+is designed to delete data on mediums in a secure manner which can not be
+recovered by thiefs, law enforcement or other threats.
+The wipe algorythm is based on the paper "Secure Deletion of Data from
+Magnetic and Solid-State Memory" presented at the 6th Usenix Security
+Symposium by Peter Gutmann, one of the leading civilian cryptographers.
+.PP
+The
+.I secure data deletion
+process of srm goes like this:
+.PP
+.TP
+.B *
+1 pass with 0xff
+.TP
+.B * 
+5 random passes. /dev/urandom is used for a secure RNG if available.
+.TP
+.B * 
+27 passes with special values defined by Peter Gutmann.
+.TP
+.B * 
+5 random passes. /dev/urandom is used for a secure RNG if available.
+.TP
+.B *   
+Rename the file to a random value
+.TP
+.B * 
+Truncate the file
+.PP
+.PP
+As an additional measure of security, the file is opened in O_SYNC mode
+and after each pass an fsync() call is done.
+.I srm
+writes 32k blocks for the purpose of speed, filling buffers of disk caches
+to force them to flush and overwriting old data which belonged to the file.
+.PP
+
+.SH COMMANDLINE OPTIONS
+.PP
+.TP
+.B \-d
+ignore the two special dot files . and .. on the commandline. (so you can
+execute it like "srm -d .* *")
+.TP
+.B \-f
+fast (and insecure mode): no /dev/urandom, no synchronize mode.
+.TP
+.B \-l 
+lessens the security. Only two passes are written: one mode with 0xff
+and a final mode random values.
+.TP
+.B \-l
+-l for a second time lessons the security even more: only one random pass
+is written.
+.TP
+.B \-r
+recursive mode, deletes all subdirectories.
+.TP
+.B \-v
+verbose mode
+.TP
+.B \-z
+wipes the last write with zeros instead of random data
+.PP
+
+.SH LIMITATIONS
+.TP
+.B NFS
+Beware of NFS. You can't ensure you really completely wiped your data
+from the remote disks.
+.TP
+.B Raid
+Raid Systems use stripped disks and have got large caches. It's hard to wipe
+them.
+.TP
+.B swap, /tmp, etc.
+Some of your data might have a temporary (deleted) copy somewhere on the
+disk. You should use
+.I sfill
+which comes with the
+.I secure_deletion package
+to ensure to wipe also the free diskspace. However, If already a small
+file aquired a block with your precious data, no tool known to me can help
+you here. For a secure deletion of the swap space
+.I sswap
+is available.
+
+.PP
+.SH BUGS 
+No bugs. There was never a bug in the secure_deletion package (in contrast
+to my other tools, whew, good luck ;-)
+Send me any that you find.  Patches are nice too :)
+
+.SH AUTHOR
+.Sp
+van Hauser / THC
+.I <vh@thc.org>
+
+.SH DISTRIBUTION
+The newest version of the
+.I secure_deletion package
+can be obtained from 
+.I http://www.thc.org
+.Sp
+.I srm
+and the
+.I secure_deletion package
+is (C) 1997-2003 by van Hauser / THC (vh@thc.org)
+.Sp
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; Version 2.
+.Sp
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+General Public License for more details.
+
+.SH SEE ALSO
+.I sfill
+(1),
+.I sswap
+(1),
+.I smem
+(1)

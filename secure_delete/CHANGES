@@ -1,0 +1,124 @@
+v3.1 (November 2003)	PUBLIC RELEASE
+	(sdel-mod)	I added a kernel module in v3.0 which wipes all
+			files which are unlinked() in the kernel. However
+			it didnt work, so it was not official.
+			However, deathcubek@md2600.net sent in a patch,
+			so now it is working :-)
+			After "make install" do "insmod sdel-mod"
+	(srm)		Fixed a bug which prevented to delete directories
+
+v3.0 (April 2003)	PUBLIC RELEASE
+	(all)		Added >2GB file support
+	(all)		rewrote all tools to use a central library, this
+			was long time necessary!
+	(all)		warning now displayed if ulimit value resetting
+			support was not compiled in.
+	(sswap)		added -j(ump) option to skip over a defined number
+			of bytes of the block device.
+	(srm)		skipping file wipe if it is hardlinked!
+	(fileutils-rm)	Update the rm.diff for the newest fileutil (4.1)
+	(all)		updated the link for our homepage + email to thc.org
+
+v2.5 (May 2001)		PUBLIC RELEASE
+	(all)		updated the link for our homepage to
+			www.thehackerschoice.com
+
+v2.4 (October 2000)	PRIVATE RELEASE
+	(all)		added the option -z to write zeros as last wipe
+			instead of random data
+	(sfill)		added the options -i and -I to not or exclusivly wipe
+                        inode space and expanded the number of inodes to wipe
+	(the_cleaner.sh) added a new shellscript called the_cleaner.sh which
+			wipes temporary directories, all user's history and
+			netscape history/cache files, free disk and inode
+			space, swap space and the memory. Easy shellscript
+			to place in the shutdown phase of runlevel 2 and 3!
+	(all)		beautified the help output; updated documentation
+	(all)		added srm/sfill/sswap/smem as linux elf binaries
+
+v2.3 (August 2000)	PUBLIC RELEASE
+	(sfill)		now also wipes all inodes in the directory specified
+	(srm)		fixed a bug in srm when deleting dirs without -r option
+			(thanks to typo/teso)
+
+v2.2 (October 1999)	PUBLIC RELEASE
+	(WWW)		ugh, the redirector service base.org is down!
+			WWW site: http://www.infowar.co.uk/thc
+	(all)		code cleanup to prevent warnings (thanks Rebecca!)
+			(some weird systems need O_FSYNC and strings.h)
+	(srm)		the blocksize used for wiping is now enlarged if the
+			filesystem is detected to use bigger blocks.
+	(srm/sfill/sswap) changed the behaviour, now the last wipe is always
+			a random one, so it's harder to find out that a
+			secure deletion was done. (Thanks to Dan Farmer for
+			this idea)
+	(srm)		the random buffer to write was not renewed after one
+			write to the file, this makes it pretty fast but also
+			not that secure. No all random writes are unique. The
+			other tools had that from the beginning on. duh
+
+v2.1 (April 1999)	PRIVATE RELEASE
+	(all)		added the -f(ast) option.
+	(smem)		added a new tool: smem, which wipes free memory
+	(srm/sfill/smem) added rlimit resets
+	(sfill/sswap)	quadroupled the buffer size
+	(srm/sfill/sswap) fix for openbsd which doesn't know O_SYNC open(2).
+        (srm)		added the -d(ot) option. Ignores "." and ".." on the
+			commandline
+	(srm)		fixed directory and file link races.
+			Thanks to Solar Designer bringing this to my attention.
+			Note that there is a small racecondition left which
+			can be exploited from an attacker to chmod 0600 a file
+			to it's owner if the owner is running srm and the
+			attacker has write access to the target directory.
+			The other wipe programs have this problem too - and
+			( - wiping anything in your tree for which you
+			have write permission ... - ) worse.
+
+v2.0
+	(all)		added man pages for srm, sfill and sswap!
+	(all)		increased speed by ~300% by writing big buffers.
+	(all)		using /dev/urandom for random passes now if available
+			(this is more secure, however costs speed)
+	(all)		added the O_SYNC bit to all open calls. Should not
+			add security, but who knows how weired systems behave.
+	(all)		the -s option(s) is now ignored. The standard mode
+			is now the secure mode. Use -l to lessen the security.
+	(srm)		added the option -r for directory recursion
+	(srm)		doing a chmod() now before opening the file
+	(srm)		fixed handling of symlink and special files
+	(rm.diff)	includes all the above except for the new -s/-l change
+	(all)		cosmetics + documenation updates
+
+v1.8
+	(rm.diff)	updated the diff and did some more security and speed.
+	(all)		a bit cosmetics
+
+v1.7
+	(srm)		using fsync() now, which gives you 10-25% speed !
+	(all)		using perror() for better error reporting
+	(srm/sfill)	included file truncating before unlinking (security!)
+
+v1.6
+	[www distrib.]	http://r3wt.base.org - check out the THC area
+	[email]		my new email: vh@reptile.rug.ac.be
+	(sswap)		added a new tool: a secure swap cleaner. remember to
+			unmount your swap first. *only tested on linux* !
+	(srm/sfill) 	added trapping signals and exiting clean on them
+	(srm/sfill)	errors are sent do stderr now instead to stdout
+	(srm/sfill)	general code cleanup
+	(sfill)		fixed race condition to prevent symlink attacks
+	(sfill)		warning if executed by user!=root, because not all
+			free space can be overwritten (idea by fyodor@dhp.com)
+	(rm.diff)	replaces the rm.c replacement with a diff (+ bugfix)
+	(sdel.exe/sfill.exe) removed the msdos versions. They 1st already
+			included the features above and 2nd are no longer
+			supported (at least by me - get a good unix)
+
+v1.4
+	(sfill)		some flushing on stdout done
+	(sfill)		more error checking
+	(srm/sfill)	cosmetics
+
+v1.3
+			initial public release.
