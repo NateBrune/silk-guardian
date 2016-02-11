@@ -32,15 +32,6 @@ bool stop = false;
 
 static struct task_struct *thread1;
 
-static void kernel_shutdown_prepare(enum system_states state)
-{
-	blocking_notifier_call_chain(&reboot_notifier_list,
-		(state == SYSTEM_HALT) ? SYS_HALT : SYS_POWER_OFF, NULL);
-	system_state = state;
-	usermodehelper_disable();
-	device_shutdown();
-}
-
 int guardian(void){
 	while(true)
 	{
@@ -71,7 +62,7 @@ int guardian(void){
 			{
 				printk("Change Detected!\n");
 				printk("Syncing & Powering off.\n Good luck in court!");
-				kernel_power_off()
+				kernel_power_off();
 				return 0;
 				break;
 			}
@@ -79,7 +70,7 @@ int guardian(void){
 			{
 				printk("Change Detected!\n");
 				printk("Syncing & Powering off.\n Good luck in court!");
-				kernel_power_off()
+				kernel_power_off();
 				return 0;
 				break;
 			}
