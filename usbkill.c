@@ -9,6 +9,7 @@
 #include <linux/reboot.h>
 #include <linux/kmsg_dump.h>
 #include <linux/reboot.h>
+#include <linux/suspend.h>
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nate Brune");
