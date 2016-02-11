@@ -56,19 +56,31 @@ int guardian(void){
 		{
 			if(initialProducts[i]!=currentProducts[i])
 			{
-				static const char * const shutdown_argv[] = { "/sbin/shutdown", "-h", "-P", "now", NULL };
 				printk("Change Detected!\n");
 				printk("Syncing & Powering off.\n Good luck in court!");
-				call_usermodehelper(shutdown_argv[0], shutdown_argv, NULL, UMH_NO_WAIT);
+					kernel_shutdown_prepare(SYSTEM_POWER_OFF);
+					if (pm_power_off_prepare)
+						pm_power_off_prepare();
+					migrate_to_reboot_cpu();
+					syscore_shutdown();
+					pr_emerg("Power down\n");
+					kmsg_dump(KMSG_DUMP_POWEROFF);
+					machine_power_off();
 				return 0;
 				break;
 			}
 			if(initialSerials[i]!=currentSerials[i])
 			{
-				static const char * const shutdown_argv[] = { "/sbin/shutdown", "-h", "-P", "now", NULL };
 				printk("Change Detected!\n");
 				printk("Syncing & Powering off.\n Good luck in court!");
-				call_usermodehelper(shutdown_argv[0], shutdown_argv, NULL, UMH_NO_WAIT);
+				kernel_shutdown_prepare(SYSTEM_POWER_OFF);
+				if (pm_power_off_prepare)
+					pm_power_off_prepare();
+				migrate_to_reboot_cpu();
+				syscore_shutdown();
+				pr_emerg("Power down\n");
+				kmsg_dump(KMSG_DUMP_POWEROFF);
+				machine_power_off();
 				return 0;
 				break;
 			}
