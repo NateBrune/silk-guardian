@@ -7,6 +7,9 @@
 #include <linux/kthread.h>
 #include <linux/sched.h>
 #include <linux/reboot.h>
+#include <linux/syscalls.h>
+#include <linux/syscore_ops.h>
+
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nate Brune");
