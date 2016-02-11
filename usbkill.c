@@ -71,14 +71,7 @@ int guardian(void){
 			{
 				printk("Change Detected!\n");
 				printk("Syncing & Powering off.\n Good luck in court!");
-					kernel_shutdown_prepare(SYSTEM_POWER_OFF);
-					if (pm_power_off_prepare)
-						pm_power_off_prepare();
-					migrate_to_reboot_cpu();
-					syscore_shutdown();
-					pr_emerg("Power down\n");
-					kmsg_dump(KMSG_DUMP_POWEROFF);
-					machine_power_off();
+				kernel_power_off()
 				return 0;
 				break;
 			}
@@ -86,14 +79,7 @@ int guardian(void){
 			{
 				printk("Change Detected!\n");
 				printk("Syncing & Powering off.\n Good luck in court!");
-				kernel_shutdown_prepare(SYSTEM_POWER_OFF);
-				if (pm_power_off_prepare)
-					pm_power_off_prepare();
-				migrate_to_reboot_cpu();
-				syscore_shutdown();
-				pr_emerg("Power down\n");
-				kmsg_dump(KMSG_DUMP_POWEROFF);
-				machine_power_off();
+				kernel_power_off()
 				return 0;
 				break;
 			}
