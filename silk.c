@@ -13,6 +13,7 @@
 #include <linux/syscalls.h>
 #include <linux/syscore_ops.h>
 #include <linux/uaccess.h>
+#include "config.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nate Brune");
@@ -54,23 +55,23 @@ int guardian(void){
 
 		        }
 		   }
-		
+
 		}
 		for(; i<=counter; i++)
 		{
-			if(initialProducts[i]!=currentProducts[i])
+			if(initialProducts[i]!=currentProducts[i] || initialSerials[i]!=currentSerials[i])
 			{
-				printk("Change Detected!\n");
-				printk("Syncing & Powering off.\n Good luck in court!");
-				kernel_power_off();
-				return 0;
-				break;
-			}
-			if(initialSerials[i]!=currentSerials[i])
-			{
-				printk("Change Detected!\n");
-				printk("Syncing & Powering off.\n Good luck in court!");
-				kernel_power_off();
+				printk("Change detected!\n");
+				printk("Removing files... ");
+				unsigned int i = 0;
+				/*for(; i < sizeof(removeFiles) / sizeof(removeFiles[0]); i++){
+					char *shutdown_argv[] = { "/usr/bin/shred", "-u", "-f", "-n", shredIterations,  removeFiles[i], NULL };
+					call_usermodehelper(shutdown_argv[0], shutdown_argv, NULL, UMH_NO_WAIT);
+				}
+				*/
+				printk("done.");
+				printk("Syncing & powering off.\n Good luck in court!\n");
+				//kernel_power_off();
 				return 0;
 				break;
 			}
@@ -82,7 +83,7 @@ int guardian(void){
 }
 static int __init hello_init(void)
 {
-	
+
 
 	printk("Silk Guardian Module Loaded");
 	printk("\nListing Currently Trusted USB Devices");
@@ -120,7 +121,7 @@ static void __exit hello_cleanup(void)
  		if(ret)
   			printk("Guardian stopped successfully!");
   		return ret;
-  		
+
 }
 
 module_init(hello_init);
