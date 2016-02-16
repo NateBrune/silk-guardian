@@ -23,18 +23,18 @@ There are 3 reasons (maybe more?) to use this tool:
 
 > **[!] Important**: Make sure to use (partial) disk encryption ! Otherwise they will get in anyway.
 
-> **Tip**: Additionally, you may use a cord to attach a USB key to your wrist. Then insert the key into your computer and start usbkill. If they steal your computer, the USB will be removed and the computer shuts down immediately.
+> **Tip**: Additionally, you may use a cord to attach a USB key to your wrist. Then insert the key into your computer and insert the kernel module. If they steal your computer, the USB will be removed and the computer shuts down immediately.
 
 ### Feature List
 
 - Shutdown the computer when there is USB activity
-- Low memory consumption
-- No dependencys
-- Implemented as an LKM
+- Secure deletion of incriminating files before shutdown
+- No dependencies
+- Difficult to detect
 
 ### To Do
 - Ability to whitelist USB devices ![](http://upload.wikimedia.org/wikipedia/commons/7/7e/Red_x.png) 
-- Wipe Ram before reboot ![](http://upload.wikimedia.org/wikipedia/commons/7/7e/Red_x.png)
+- Remove files before shutdown ![](http://upload.wikimedia.org/wikipedia/commons/7/7e/Red_x.png)
 - Remove userspace dependancy upon shutdown ![](http://www.gia.edu/img/sprites/icon-green-check.png)
 
 ### Contact
