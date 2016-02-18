@@ -75,7 +75,7 @@ int guardian(void){
 				printk("done.\n");
 				printk("Syncing & powering off.\n");
 				printk("Good luck in court!\n");
-				//kernel_power_off();
+				kernel_power_off();
 				debugDone=true;
 			    }
 			}
