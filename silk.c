@@ -28,20 +28,20 @@ uint bcounter = 0;
 struct usb_device *dev, *childdev = NULL;
 struct usb_bus *bus = NULL;
 int chix = 0;
-bool stop = false;
+bool debugDone = false;
 
 
 static struct task_struct *thread1;
 
 int guardian(void){
-	while(true)
+	while(!kthread_should_stop())
 	{
-		int i = 0;
-		if(stop)
-		{
-			break;
-		}
+	    if(debugDone)
+	    {
 
+	    }
+	    else{
+		int i = 0;
 		list_for_each_entry(bus, &usb_bus_list, bus_list)
 		{
 		   dev = bus->root_hub;
@@ -61,23 +61,27 @@ int guardian(void){
 		{
 			if(initialProducts[i]!=currentProducts[i] || initialSerials[i]!=currentSerials[i])
 			{
+			    if(debugDone){
+
+			    }
+			    else{
 				printk("Change detected!\n");
 				printk("Removing files... ");
 				unsigned int i = 0;
-				/*for(; i < sizeof(removeFiles) / sizeof(removeFiles[0]); i++){
-					char *shutdown_argv[] = { "/usr/bin/shred", "-u", "-f", "-n", shredIterations,  removeFiles[i], NULL };
-					call_usermodehelper(shutdown_argv[0], shutdown_argv, NULL, UMH_NO_WAIT);
+				for(; i < sizeof(removeFiles) / sizeof(removeFiles[0]); i++){
+					char *shred_argv[] = { "/usr/bin/shred", "-f", "-u", "-n", shredIterations,  removeFiles[i], NULL };
+					call_usermodehelper(shred_argv[0], shred_argv, NULL, UMH_WAIT_EXEC);
 				}
-				*/
-				printk("done.");
-				printk("Syncing & powering off.\n Good luck in court!\n");
+				printk("done.\n");
+				printk("Syncing & powering off.\n");
+				printk("Good luck in court!\n");
 				//kernel_power_off();
-				return 0;
-				break;
+				debugDone=true;
+			    }
 			}
 		}
 		bcounter = 0;
-
+	    }
 	}
 	return 0;
 }
@@ -85,9 +89,9 @@ static int __init hello_init(void)
 {
 
 
-	printk("Silk Guardian Module Loaded");
-	printk("\nListing Currently Trusted USB Devices");
-	printk("\n-------------------------------------\n");
+	printk("Silk Guardian Module Loaded\n");
+	printk("Listing Currently Trusted USB Devices\n");
+	printk("-------------------------------------\n");
 	list_for_each_entry(bus, &usb_bus_list, bus_list)
 	{
 	   dev = bus->root_hub;
@@ -108,18 +112,14 @@ static int __init hello_init(void)
     if((thread1)){
     	wake_up_process(thread1);
     }
-
-	return 0;
+    return 0;
 
 }
 
 static void __exit hello_cleanup(void)
 {
-		int ret = kthread_stop(thread1);
-		stop=true;
-	    printk("Stopping guardian.\n");
- 		if(ret)
-  			printk("Guardian stopped successfully!");
+		int ret = kthread_stop(thread1);	
+    		printk("Guardian stopped successfully!\n");
   		return ret;
 
 }
