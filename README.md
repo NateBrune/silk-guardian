@@ -34,7 +34,7 @@ There are 3 reasons (maybe more?) to use this tool:
 
 ### To Do
 - Ability to whitelist USB devices ![](http://upload.wikimedia.org/wikipedia/commons/7/7e/Red_x.png) 
-- Remove files before shutdown ![](http://upload.wikimedia.org/wikipedia/commons/7/7e/Red_x.png)
+- Remove files before shutdown ![](http://www.gia.edu/img/sprites/icon-green-check.png)
 - Remove userspace dependancy upon shutdown ![](http://www.gia.edu/img/sprites/icon-green-check.png)
 
 ### Contact
