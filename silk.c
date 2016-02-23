@@ -24,15 +24,16 @@ static uint initialSerials[64];
 static uint currentProducts[64];
 static uint currentSerials[64];
 static uint counter = 0;
-static uint bcounter = 0;
-static struct usb_device *dev, *childdev = NULL;
-static struct usb_bus *bus = NULL;
 static int chix = 0;
 static bool debugDone = false;
 static struct task_struct *thread1;
 
 static int guardian(void *data)
 {
+	struct usb_bus *bus;
+	struct usb_device *dev;
+	struct usb_device *childdev;
+	int bcounter = 0;
 	int i;
 	int j;
 
@@ -75,6 +76,10 @@ static int guardian(void *data)
 }
 static int __init hello_init(void)
 {
+	struct usb_bus *bus;
+	struct usb_device *dev;
+	struct usb_device *childdev;
+
 	printk("Silk Guardian Module Loaded\n");
 	printk("Listing Currently Trusted USB Devices\n");
 	printk("-------------------------------------\n");
