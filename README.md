@@ -39,4 +39,5 @@ There are 3 reasons (maybe more?) to use this tool:
 
 ### Contact
 
-[natebrune@gmail.com](mailto:natebrune@gmail.com) - https://keybase.io/natebrune
+[natebrune@gmail.com](mailto:natebrune@gmail.com)  
+https://keybase.io/natebrune
