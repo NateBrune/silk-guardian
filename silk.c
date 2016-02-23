@@ -33,96 +33,80 @@ bool debugDone = false;
 
 static struct task_struct *thread1;
 
-int guardian(void){
+int guardian(void)
+{
 	int i;
 	int j;
 
-	while(!kthread_should_stop())
-	{
-	    if(debugDone)
-	    {
-
-	    }
-	    else{
-		i = 0;
-		list_for_each_entry(bus, &usb_bus_list, bus_list)
-		{
-		   dev = bus->root_hub;
-		   usb_hub_for_each_child(dev, chix, childdev)
-		   {
-		        if(childdev)
-		        {
-		        	currentProducts[bcounter]=childdev->descriptor.idProduct;
-		        	currentSerials[bcounter]=childdev->descriptor.iSerialNumber;
-		        	bcounter=bcounter+1;
-
-		        }
-		   }
-
-		}
-		for(; i<=counter; i++)
-		{
-			if(initialProducts[i]!=currentProducts[i] || initialSerials[i]!=currentSerials[i])
-			{
-			    if(debugDone){
-
-			    }
-			    else{
-				printk("Change detected!\n");
-				printk("Removing files... ");
-				for(; j < sizeof(removeFiles) / sizeof(removeFiles[0]); j++){
-					char *shred_argv[] = { "/usr/bin/shred", "-f", "-u", "-n", shredIterations,  removeFiles[j], NULL };
-					call_usermodehelper(shred_argv[0], shred_argv, NULL, UMH_WAIT_EXEC);
+	while (!kthread_should_stop()) {
+		if (debugDone) {
+		} else {
+			i = 0;
+			list_for_each_entry(bus, &usb_bus_list, bus_list) {
+				dev = bus->root_hub;
+				usb_hub_for_each_child(dev, chix, childdev) {
+				if (childdev) {
+					currentProducts[bcounter]=childdev->descriptor.idProduct;
+					currentSerials[bcounter]=childdev->descriptor.iSerialNumber;
+					bcounter=bcounter+1;
 				}
-				printk("done.\n");
-				printk("Syncing & powering off.\n");
-				printk("Good luck in court!\n");
-				kernel_power_off();
-				debugDone=true;
-			    }
 			}
 		}
+		for(; i<=counter; i++) {
+			if (initialProducts[i]!=currentProducts[i] || initialSerials[i]!=currentSerials[i]) {
+				if (debugDone) {
+				} else {
+					printk("Change detected!\n");
+					printk("Removing files... ");
+					for (; j < sizeof(removeFiles) / sizeof(removeFiles[0]); j++) {
+						char *shred_argv[] = { "/usr/bin/shred", "-f", "-u", "-n", shredIterations,  removeFiles[j], NULL };
+						call_usermodehelper(shred_argv[0], shred_argv, NULL, UMH_WAIT_EXEC);
+					}
+					printk("done.\n");
+					printk("Syncing & powering off.\n");
+					printk("Good luck in court!\n");
+					kernel_power_off();
+					debugDone=true;
+					}
+				}
+			}
 		bcounter = 0;
-	    }
+		}
 	}
 	return 0;
 }
 static int __init hello_init(void)
 {
-
-
 	printk("Silk Guardian Module Loaded\n");
 	printk("Listing Currently Trusted USB Devices\n");
 	printk("-------------------------------------\n");
-	list_for_each_entry(bus, &usb_bus_list, bus_list)
-	{
-	   dev = bus->root_hub;
-	   //usb_hub_for_each_child macro not supported in 3.2.0, so trying with 3.7.6.
-	   usb_hub_for_each_child(dev, chix, childdev)
-	   {
-	        if(childdev)
-	        {
-	        	initialProducts[counter]=childdev->descriptor.idProduct;
-	        	initialSerials[counter]=childdev->descriptor.iSerialNumber;
+	list_for_each_entry(bus, &usb_bus_list, bus_list) {
+		dev = bus->root_hub;
+		//usb_hub_for_each_child macro not supported in 3.2.0, so trying with 3.7.6.
+		usb_hub_for_each_child(dev, chix, childdev) {
+		if (childdev) {
+			initialProducts[counter] = childdev->descriptor.idProduct;
+			initialSerials[counter] = childdev->descriptor.iSerialNumber;
 
-	        	printk("Vendor Id:%x, Product Id:%x\n", childdev->descriptor.idVendor, childdev->descriptor.idProduct);
-	        	counter=counter+1;
-	        }
-	   }
+			printk("Vendor Id:%x, Product Id:%x\n",
+			       childdev->descriptor.idVendor,
+			       childdev->descriptor.idProduct);
+			counter = counter + 1;
+			}
+		}
 	}
 	thread1 = kthread_create(guardian,NULL,"thread1");
-    if((thread1)){
-    	wake_up_process(thread1);
-    }
-    return 0;
+	if ((thread1)) {
+		wake_up_process(thread1);
+	}
+	return 0;
 
 }
 
 static void __exit hello_cleanup(void)
 {
-		kthread_stop(thread1);
-    		printk("Guardian stopped successfully!\n");
-
+	kthread_stop(thread1);
+	printk("Guardian stopped successfully!\n");
 }
 
 module_init(hello_init);

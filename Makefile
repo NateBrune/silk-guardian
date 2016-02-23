@@ -1,5 +1,11 @@
 obj-m += silk.o
+
+KERNELVER	?= $(shell uname -r)
+KERNELDIR	?= /lib/modules/$(KERNELVER)/build
+PWD		:= $(shell pwd)
+
 all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+	make -C $(KERNELDIR) M=$(PWD)
+
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+	make -C $(KERNELDIR) M=$(PWD) clean
