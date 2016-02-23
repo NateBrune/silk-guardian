@@ -118,9 +118,8 @@ static int __init hello_init(void)
 
 static void __exit hello_cleanup(void)
 {
-		int ret = kthread_stop(thread1);	
+		kthread_stop(thread1);
     		printk("Guardian stopped successfully!\n");
-  		return ret;
 
 }
 
