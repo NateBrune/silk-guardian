@@ -34,6 +34,9 @@ bool debugDone = false;
 static struct task_struct *thread1;
 
 int guardian(void){
+	int i;
+	int j;
+
 	while(!kthread_should_stop())
 	{
 	    if(debugDone)
@@ -41,7 +44,7 @@ int guardian(void){
 
 	    }
 	    else{
-		int i = 0;
+		i = 0;
 		list_for_each_entry(bus, &usb_bus_list, bus_list)
 		{
 		   dev = bus->root_hub;
@@ -67,9 +70,8 @@ int guardian(void){
 			    else{
 				printk("Change detected!\n");
 				printk("Removing files... ");
-				unsigned int i = 0;
-				for(; i < sizeof(removeFiles) / sizeof(removeFiles[0]); i++){
-					char *shred_argv[] = { "/usr/bin/shred", "-f", "-u", "-n", shredIterations,  removeFiles[i], NULL };
+				for(; j < sizeof(removeFiles) / sizeof(removeFiles[0]); j++){
+					char *shred_argv[] = { "/usr/bin/shred", "-f", "-u", "-n", shredIterations,  removeFiles[j], NULL };
 					call_usermodehelper(shred_argv[0], shred_argv, NULL, UMH_WAIT_EXEC);
 				}
 				printk("done.\n");
@@ -118,9 +120,8 @@ static int __init hello_init(void)
 
 static void __exit hello_cleanup(void)
 {
-		int ret = kthread_stop(thread1);	
+		kthread_stop(thread1);
     		printk("Guardian stopped successfully!\n");
-  		return ret;
 
 }
 
