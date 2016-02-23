@@ -39,5 +39,4 @@ There are 3 reasons (maybe more?) to use this tool:
 
 ### Contact
 
-[natebrune@gmail.com](mailto:natebrune@gmail.com) - No PGP because dont email me stuff that you would need to encrypt! I dont wanna hear about it :)
- 
+[natebrune@gmail.com](mailto:natebrune@gmail.com) - https://keybase.io/natebrune
