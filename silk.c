@@ -31,7 +31,7 @@ static int chix = 0;
 static bool debugDone = false;
 static struct task_struct *thread1;
 
-static int guardian(void)
+static int guardian(void *data)
 {
 	int i;
 	int j;
