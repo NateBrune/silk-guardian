@@ -19,22 +19,21 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Nate Brune");
 MODULE_DESCRIPTION("A module that protects you from having a very bad no good terrible day.");
 
-uint initialProducts[64];
-uint initialSerials[64];
-uint currentProducts[64];
-uint currentSerials[64];
-uint counter = 0;
-uint bcounter = 0;
-struct usb_device *dev, *childdev = NULL;
-struct usb_bus *bus = NULL;
-int chix = 0;
-bool debugDone = false;
-
-
+static uint initialProducts[64];
+static uint initialSerials[64];
+static uint currentProducts[64];
+static uint currentSerials[64];
+static uint counter = 0;
+static int chix = 0;
+static bool debugDone = false;
 static struct task_struct *thread1;
 
-int guardian(void)
+static int guardian(void *data)
 {
+	struct usb_bus *bus;
+	struct usb_device *dev;
+	struct usb_device *childdev;
+	int bcounter = 0;
 	int i;
 	int j;
 
@@ -77,6 +76,10 @@ int guardian(void)
 }
 static int __init hello_init(void)
 {
+	struct usb_bus *bus;
+	struct usb_device *dev;
+	struct usb_device *childdev;
+
 	printk("Silk Guardian Module Loaded\n");
 	printk("Listing Currently Trusted USB Devices\n");
 	printk("-------------------------------------\n");
