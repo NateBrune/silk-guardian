@@ -10,7 +10,7 @@ To run:
 
 ```shell
 make
-sudo insmod silk.ko
+sudo insmod usbkill.ko
 ```
 
 ### Why?
