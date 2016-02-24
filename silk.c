@@ -114,15 +114,15 @@ static struct notifier_block usb_notify = {
 
 static int __init silk_init(void)
 {
-	pr_info("Now watching USB devices...\n");
 	usb_register_notify(&usb_notify);
+	pr_info("Now watching USB devices...\n");
 	return 0;
 }
 module_init(silk_init);
 
 static void __exit silk_exit(void)
 {
-	pr_info("No longer watching USB devices.\n");
 	usb_unregister_notify(&usb_notify);
+	pr_info("No longer watching USB devices.\n");
 }
 module_exit(silk_exit);
