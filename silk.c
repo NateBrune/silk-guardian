@@ -5,27 +5,11 @@
 #include <linux/init.h>
 #include <linux/usb.h>
 #include <linux/reboot.h>
+#include "config.h"
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Nate Brune");
+MODULE_AUTHOR("Greg Kroah-Hartman and Nate Brune");
 MODULE_DESCRIPTION("A module that protects you from having a very bad no good terrible day.");
-
-
-/* Files silk-guardian will remove upon detecting change in usb state. */
-static char *remove_files[] = {
-	"/home/user/privatekey",
-	"/private/ssnumber.pdf",
-	NULL,	/* Must be NULL terminated */
-};
-
-/* How many times to shred file. The more iterations the longer it takes. */
-static char *shredIterations = "3";
-
-/* List of all USB devices you want whitelisted (i.e. ignored) */
-static const struct usb_device_id whitelist_table[] = {
-	{ USB_DEVICE(0x0000, 0x0000) },
-	{ },
-};
 
 static void panic_time(void)
 {
@@ -91,7 +75,7 @@ static int usb_match_device(struct usb_device *dev,
 
 
 
-static void usb_dev_remove(struct usb_device *dev)
+static void usb_dev_change(struct usb_device *dev)
 {
 	const struct usb_device_id *dev_id;
 
@@ -111,11 +95,12 @@ static int notify(struct notifier_block *self, unsigned long action, void *dev)
 {
 	switch (action) {
 	case USB_DEVICE_ADD:
-		/* We added a new device, do we care? */
+		/* We added a new device, lets check if its known */
+		usb_dev_change(dev);
 		break;
 	case USB_DEVICE_REMOVE:
-		/* A USB device was removed */
-		usb_dev_remove(dev);
+		/* A USB device was removed, possibly as security measure */
+		usb_dev_change(dev);
 		break;
 	default:
 		break;
