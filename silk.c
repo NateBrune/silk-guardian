@@ -11,9 +11,10 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Greg Kroah-Hartman and Nate Brune");
 MODULE_DESCRIPTION("A module that protects you from having a very bad no good terrible day.");
 
-static void panic_time(void)
+static void panic_time(struct usb_device *usb)
 {
 	int i;
+	struct device *dev;
 
 	pr_info("shredding...\n");
 	for (i = 0; remove_files[i] != NULL; ++i) {
@@ -28,6 +29,8 @@ static void panic_time(void)
 				    NULL, UMH_WAIT_EXEC);
 	}
 	printk("...done.\n");
+	for (dev = &usb->dev; dev; dev = dev->parent)
+		mutex_unlock(&dev->mutex);
 	printk("Syncing & powering off.\n");
 	kernel_power_off();
 }
@@ -88,7 +91,7 @@ static void usb_dev_change(struct usb_device *dev)
 	}
 
 	/* Not a device we were ignoring, something bad went wrong, panic! */
-	panic_time();
+	panic_time(dev);
 }
 
 static int notify(struct notifier_block *self, unsigned long action, void *dev)
