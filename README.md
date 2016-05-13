@@ -41,8 +41,11 @@ More like... to-done. Way to go community you did it!
 
 ### Change Log
 2.0 - Updated to use notifier interface. Thus making this product like... 1000% better
+
 1.5 - Updated to use shred and remove files on shutdown
+
 1.0 - Initial release.
+
 ### Contact
 
 [natebrune@gmail.com](mailto:natebrune@gmail.com)  
