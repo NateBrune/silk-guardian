@@ -33,10 +33,16 @@ There are 3 reasons (maybe more?) to use this tool:
 - Difficult to detect
 
 ### To Do
-- Ability to whitelist USB devices ![](http://upload.wikimedia.org/wikipedia/commons/7/7e/Red_x.png) 
+- Ability to whitelist USB devices ![](http://www.gia.edu/img/sprites/icon-green-check.png)
 - Remove files before shutdown ![](http://www.gia.edu/img/sprites/icon-green-check.png)
 - Remove userspace dependancy upon shutdown ![](http://www.gia.edu/img/sprites/icon-green-check.png)
 
+More like... to-done. Way to go community you did it! 
+
+### Change Log
+2.0 - Updated to use notifier interface. Thus making this product like... 1000% better
+1.5 - Updated to use shred and remove files on shutdown
+1.0 - Initial release.
 ### Contact
 
 [natebrune@gmail.com](mailto:natebrune@gmail.com)  
