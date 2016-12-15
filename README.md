@@ -1,9 +1,9 @@
 # silk-guardian
 Silk Guardian is an anti-forensic LKM kill-switch that waits for a change on your usb ports and then wipes your ram, deletes precious files, and turns off your computer.
- 
+
  Very Very much inspired by [usbkill](https://github.com/hephaest0s/usbkill)
  I remade this project as a LKM because I feel that it could be implemented better than it already is.
- 
+
  > The project is still under development but it does work and is effective.
 
 To run:
@@ -13,6 +13,11 @@ make
 sudo insmod silk.ko
 ```
 
+You will need to have the `linux-headers` package installed. If you haven't:
+
+```shell
+sudo apt-get install linux-headers
+```
 ### Why?
 
 There are 3 reasons (maybe more?) to use this tool:
@@ -37,7 +42,7 @@ There are 3 reasons (maybe more?) to use this tool:
 - Remove files before shutdown ![](http://www.gia.edu/img/sprites/icon-green-check.png)
 - Remove userspace dependancy upon shutdown ![](http://www.gia.edu/img/sprites/icon-green-check.png)
 
-More like... to-done. Way to go community you did it! 
+More like... to-done. Way to go community you did it!
 
 ### Change Log
 2.0 - Updated to use notifier interface. Thus making this product like... 1000% better
