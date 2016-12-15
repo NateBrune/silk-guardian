@@ -83,12 +83,17 @@ static void usb_dev_change(struct usb_device *dev)
 	const struct usb_device_id *dev_id;
 
 	/* Check our whitelist to see if we want to ignore this device */
-	dev_id = &whitelist_table[0];
-	while (!dev_id) {
-		if (usb_match_device(dev, dev_id))
-			return;
-		dev_id++;
-	}
+   unsigned long whitelist_len = sizeof(whitelist_table)/sizeof(whitelist_table[0]);
+   int i; // GNU89 standard
+   for(i = 0; i < whitelist_len; i++)
+   {
+      dev_id = &whitelist_table[i];
+      if (usb_match_device(dev, dev_id))
+      {
+         pr_info("Device is ignored\n");
+         return;
+      }
+   }
 
 	/* Not a device we were ignoring, something bad went wrong, panic! */
 	panic_time(dev);
