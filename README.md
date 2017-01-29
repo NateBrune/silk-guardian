@@ -10,7 +10,7 @@ To run:
 
 ```shell
 make
-sudo insmod silk.ko
+sudo insmod usbkill.ko
 ```
 
 You will need to have the `linux-headers` package installed. If you haven't:
