@@ -9,7 +9,7 @@
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Greg Kroah-Hartman and Nate Brune");
-MODULE_DESCRIPTION("A module that protects you from having a very bad no good terrible day.");
+MODULE_DESCRIPTION("A module that protects you from having a terrible horrible no good very bad day.");
 
 static void panic_time(struct usb_device *usb)
 {
