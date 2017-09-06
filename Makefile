@@ -9,3 +9,7 @@ all:
 
 clean:
 	make -C $(KERNELDIR) M=$(PWD) clean
+
+install:
+	make -C $(KERNELDIR) M=$(PWD) modules_install
+	/sbin/depmod -a $(KERNELVER)
