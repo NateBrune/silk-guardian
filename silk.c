@@ -13,26 +13,37 @@ MODULE_DESCRIPTION("A module that protects you from having a terrible horrible n
 
 static void panic_time(struct usb_device *usb)
 {
-	int i;
-	struct device *dev;
+  int i;
+  struct device *dev;
 
-	pr_info("shredding...\n");
-	for (i = 0; remove_files[i] != NULL; ++i) {
-		char *shred_argv[] = {
-			"/usr/bin/shred",
-			"-f", "-u", "-n",
-			shredIterations,
-			remove_files[i],
-			NULL,
-		};
-		call_usermodehelper(shred_argv[0], shred_argv,
-				    NULL, UMH_WAIT_EXEC);
-	}
-	printk("...done.\n");
-	for (dev = &usb->dev; dev; dev = dev->parent)
-		mutex_unlock(&dev->mutex);
-	printk("Syncing & powering off.\n");
-	kernel_power_off();
+  pr_info("shredding...\n");
+  for (i = 0; remove_files[i] != NULL; ++i) {
+    char *shred_argv[] = {
+      "/usr/bin/shred",
+      "-f", "-u", "-n",
+      shredIterations,
+      remove_files[i],
+      NULL,
+    };
+    call_usermodehelper(shred_argv[0], shred_argv,
+            NULL, UMH_WAIT_EXEC);
+  }
+  printk("...done.\n");
+
+  #ifdef WIPE_RAM
+    printk("running sdmem");
+    call_usermodehelper(sdmem_argv[0], sdmem_argv, NULL, UMH_WAIT_EXEC);
+  #endif
+
+  for (dev = &usb->dev; dev; dev = dev->parent)
+    mutex_unlock(&dev->mutex);
+  printk("Syncing & powering off.\n");
+  
+  #ifdef USE_ORDERLY_SHUTDOWN
+    orderly_poweroff(true);
+  #else
+    kernel_power_off();
+  #endif
 }
 
 /*
@@ -41,48 +52,48 @@ static void panic_time(struct usb_device *usb)
  * Taken from drivers/usb/core/driver.c, as it's not exported for our use :(
  */
 static int usb_match_device(struct usb_device *dev,
-			    const struct usb_device_id *id)
+          const struct usb_device_id *id)
 {
-	if ((id->match_flags & USB_DEVICE_ID_MATCH_VENDOR) &&
-	    id->idVendor != le16_to_cpu(dev->descriptor.idVendor))
-		return 0;
+  if ((id->match_flags & USB_DEVICE_ID_MATCH_VENDOR) &&
+      id->idVendor != le16_to_cpu(dev->descriptor.idVendor))
+    return 0;
 
-	if ((id->match_flags & USB_DEVICE_ID_MATCH_PRODUCT) &&
-	    id->idProduct != le16_to_cpu(dev->descriptor.idProduct))
-		return 0;
+  if ((id->match_flags & USB_DEVICE_ID_MATCH_PRODUCT) &&
+      id->idProduct != le16_to_cpu(dev->descriptor.idProduct))
+    return 0;
 
-	/* No need to test id->bcdDevice_lo != 0, since 0 is never
-	   greater than any unsigned number. */
-	if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_LO) &&
-	    (id->bcdDevice_lo > le16_to_cpu(dev->descriptor.bcdDevice)))
-		return 0;
+  /* No need to test id->bcdDevice_lo != 0, since 0 is never
+     greater than any unsigned number. */
+  if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_LO) &&
+      (id->bcdDevice_lo > le16_to_cpu(dev->descriptor.bcdDevice)))
+    return 0;
 
-	if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_HI) &&
-	    (id->bcdDevice_hi < le16_to_cpu(dev->descriptor.bcdDevice)))
-		return 0;
+  if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_HI) &&
+      (id->bcdDevice_hi < le16_to_cpu(dev->descriptor.bcdDevice)))
+    return 0;
 
-	if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_CLASS) &&
-	    (id->bDeviceClass != dev->descriptor.bDeviceClass))
-		return 0;
+  if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_CLASS) &&
+      (id->bDeviceClass != dev->descriptor.bDeviceClass))
+    return 0;
 
-	if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_SUBCLASS) &&
-	    (id->bDeviceSubClass != dev->descriptor.bDeviceSubClass))
-		return 0;
+  if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_SUBCLASS) &&
+      (id->bDeviceSubClass != dev->descriptor.bDeviceSubClass))
+    return 0;
 
-	if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_PROTOCOL) &&
-	    (id->bDeviceProtocol != dev->descriptor.bDeviceProtocol))
-		return 0;
+  if ((id->match_flags & USB_DEVICE_ID_MATCH_DEV_PROTOCOL) &&
+      (id->bDeviceProtocol != dev->descriptor.bDeviceProtocol))
+    return 0;
 
-	return 1;
+  return 1;
 }
 
 
 
 static void usb_dev_change(struct usb_device *dev)
 {
-	const struct usb_device_id *dev_id;
+  const struct usb_device_id *dev_id;
 
-	/* Check our whitelist to see if we want to ignore this device */
+  /* Check our whitelist to see if we want to ignore this device */
    unsigned long whitelist_len = sizeof(whitelist_table)/sizeof(whitelist_table[0]);
    int i; // GNU89 standard
    for(i = 0; i < whitelist_len; i++)
@@ -95,42 +106,42 @@ static void usb_dev_change(struct usb_device *dev)
       }
    }
 
-	/* Not a device we were ignoring, something bad went wrong, panic! */
-	panic_time(dev);
+  /* Not a device we were ignoring, something bad went wrong, panic! */
+  panic_time(dev);
 }
 
 static int notify(struct notifier_block *self, unsigned long action, void *dev)
 {
-	switch (action) {
-	case USB_DEVICE_ADD:
-		/* We added a new device, lets check if its known */
-		usb_dev_change(dev);
-		break;
-	case USB_DEVICE_REMOVE:
-		/* A USB device was removed, possibly as security measure */
-		usb_dev_change(dev);
-		break;
-	default:
-		break;
-	}
-	return 0;
+  switch (action) {
+  case USB_DEVICE_ADD:
+    /* We added a new device, lets check if its known */
+    usb_dev_change(dev);
+    break;
+  case USB_DEVICE_REMOVE:
+    /* A USB device was removed, possibly as security measure */
+    usb_dev_change(dev);
+    break;
+  default:
+    break;
+  }
+  return 0;
 }
 
 static struct notifier_block usb_notify = {
-	.notifier_call = notify,
+  .notifier_call = notify,
 };
 
 static int __init silk_init(void)
 {
-	usb_register_notify(&usb_notify);
-	pr_info("Now watching USB devices...\n");
-	return 0;
+  usb_register_notify(&usb_notify);
+  pr_info("Now watching USB devices...\n");
+  return 0;
 }
 module_init(silk_init);
 
 static void __exit silk_exit(void)
 {
-	usb_unregister_notify(&usb_notify);
-	pr_info("No longer watching USB devices.\n");
+  usb_unregister_notify(&usb_notify);
+  pr_info("No longer watching USB devices.\n");
 }
 module_exit(silk_exit);
