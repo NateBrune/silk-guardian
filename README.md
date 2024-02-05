@@ -52,4 +52,5 @@ More like... to-done. Way to go community you did it!
 ### Contact
 
 [natebrune@gmail.com](mailto:natebrune@gmail.com)  
-https://keybase.io/natebrune
+[https://keybase.io/natebrune](https://keybase.io/natebrune)  
+[https://twitter.com/capitalisnn](https://twitter.com/capitalisnn)
