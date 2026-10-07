@@ -28,6 +28,41 @@ There are 3 reasons (maybe more?) to use this tool:
 
 > **Tip**: Additionally, you may use a cord to attach a USB key to your wrist. Then insert the key into your computer and insert the kernel module. If they steal your computer, the USB will be removed and the computer shuts down immediately.
 
+### Permanent installation with DKMS
+
+Silk Guardian needs to be recompiled and re-enabled as a Linux module every time there's a kernel update, otherwise it stops working.
+DKMS (Dynamic Kernel Module Support) is a program to automatize this chore.
+
+To manage the `silk` module with DKMS install the package first:
+
+```shell
+sudo apt install dkms
+```
+
+Then clone the repository at `/usr/src` and name the directory `silk-guardian-1.0`:
+
+```shell
+cd /usr/src
+sudo git clone https://github.com/NateBrune/silk-guardian silk-guardian-1.0
+```
+
+Then register Silk Guardian as a DKMS module and write `silk` to any file inside `/etc/modules-load.d/`
+so that the module automatically loads on startup.
+
+```shell
+sudo dkms add silk-guardian/1.0
+sudo dkms build silk-guardian/1.0
+sudo dkms install silk-guardian/1.0
+echo "silk" | sudo tee /etc/modules-load.d/silk-guardian.conf
+```
+
+To verify everything is working run the following commands after rebooting the computer:
+
+```shell
+sudo dkms status
+lsmod | grep silk
+```
+
 ### Feature List
 
 - Shutdown the computer when there is USB activity
